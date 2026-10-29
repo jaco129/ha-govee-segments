@@ -3,18 +3,47 @@
     "step": {
       "user": {
         "title": "Govee LAN Segments",
-        "description": "Enter the device's IP address. LAN Control must be enabled for it in the Govee Home app. Reserve the IP on your router so it doesn't change.",
+        "description": "Pick a light found on your network, or enter its IP address. LAN Control must be enabled for it in the Govee Home app.",
         "data": {
-          "host": "IP address",
-          "sku": "Model"
+          "device": "Device"
+        }
+      },
+      "manual": {
+        "title": "Govee LAN Segments",
+        "description": "Enter the light's IP address. LAN Control must be enabled for it in the Govee Home app. Supported models: {models}.",
+        "data": {
+          "host": "IP address"
+        }
+      },
+      "reconfigure": {
+        "title": "Change IP address",
+        "description": "Enter the light's new IP address.",
+        "data": {
+          "host": "IP address"
         }
       }
     },
     "error": {
-      "invalid_host": "Enter an IP address, such as 192.168.1.50."
+      "invalid_host": "Enter an IP address, such as 192.168.1.50.",
+      "cannot_connect": "No reply from that address. Check the IP, that the light is powered, and that LAN Control is on in the Govee Home app.",
+      "unsupported": "That device answered, but its model isn't supported yet.",
+      "port_in_use": "UDP port 4002 is already in use on this Home Assistant host, usually by the Govee lights local integration. Remove it and try again."
     },
     "abort": {
-      "already_configured": "This device is already set up."
+      "already_configured": "This device is already set up.",
+      "port_in_use": "UDP port 4002 is already in use on this Home Assistant host, usually by the Govee lights local integration. Remove it and try again.",
+      "wrong_device": "That IP address belongs to a different Govee device.",
+      "reconfigure_successful": "The IP address was updated."
+    }
+  },
+  "issues": {
+    "port_conflict_govee_light_local": {
+      "title": "Govee lights local is blocking Govee LAN Segments",
+      "description": "Govee devices send every reply to UDP port 4002, so only one Govee LAN integration can run on a Home Assistant host. The Govee lights local integration currently holds the port ({error}).\n\nGovee LAN Segments replaces it for supported lights. Remove Govee lights local under **Settings > Devices & services**, then restart Home Assistant."
+    },
+    "port_conflict": {
+      "title": "Govee LAN Segments can't open UDP port 4002",
+      "description": "Govee devices send every reply to UDP port 4002, and something else on this Home Assistant host is using it ({error}). Stop whatever holds the port (often another Govee integration or add-on), then restart Home Assistant."
     }
   }
 }

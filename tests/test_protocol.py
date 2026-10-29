@@ -68,5 +68,46 @@ class FrameTests(unittest.TestCase):
             protocol.color_frame([15], (0, 0, 0))
 
 
+class SceneAndMessageTests(unittest.TestCase):
+    def test_builtin_scene(self):
+        # 2026-10-29 15:15:12: sunset played
+        self.assertEqual(
+            protocol.scene_frames(1),
+            [hexframe("33 05 04 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 33")],
+        )
+
+    def test_catalog_scene_aurora(self):
+        # 2026-10-29 15:17:22: Aurora played with exactly these frames
+        scenes = json.loads((_PATH.parent / "scenes" / "H7094.json").read_text(encoding="utf-8"))
+        aurora = next(s for s in scenes if s["code"] == 13089)
+        self.assertEqual(
+            protocol.scene_frames(13089, base64.b64decode(aurora["param"])),
+            [
+                hexframe("a3 00 01 03 02 01 23 00 00 00 01 00 01 ff b8 01 c6 14 14 01"),
+                hexframe("a3 01 03 c6 14 04 4b fe 4f 07 fe 87 4a ff 69 07 fe c9 04 1b"),
+                hexframe("a3 ff 00 e2 00 00 80 00 00 00 00 00 00 00 00 00 00 00 00 3e"),
+                hexframe("33 05 04 21 33 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20"),
+            ],
+        )
+
+    def test_messages(self):
+        self.assertEqual(protocol.turn_message(True), b'{"msg":{"cmd":"turn","data":{"value":1}}}')
+        self.assertEqual(protocol.brightness_message(30), b'{"msg":{"cmd":"brightness","data":{"value":30}}}')
+        self.assertEqual(
+            protocol.kelvin_message(2700),
+            b'{"msg":{"cmd":"colorwc","data":{"color":{"r":0,"g":0,"b":0},"colorTemInKelvin":2700}}}',
+        )
+        self.assertEqual(
+            protocol.scan_message(), b'{"msg":{"cmd":"scan","data":{"account_topic":"reserve"}}}'
+        )
+
+    def test_parse(self):
+        reply = b'{"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100}}}'
+        self.assertEqual(protocol.parse(reply), ("devStatus", {"onOff": 1, "brightness": 100}))
+        self.assertIsNone(protocol.parse(b"not json"))
+        self.assertIsNone(protocol.parse(b'{"msg":{"cmd":"x"}}'))
+        self.assertIsNone(protocol.parse(b'[1,2]'))
+
+
 if __name__ == "__main__":
     unittest.main()
