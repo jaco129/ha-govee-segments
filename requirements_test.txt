@@ -1,2 +1,2 @@
 # Pins a matching Home Assistant release; bump to test against newer HA.
-pytest-homeassistant-custom-component==0.13.316
+pytest-homeassistant-custom-component==0.13.375
