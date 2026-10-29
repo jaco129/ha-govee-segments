@@ -114,8 +114,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         await er.async_migrate_entries(hass, entry.entry_id, rekey)
         dev_reg = dr.async_get(hass)
-        if device := dev_reg.async_get_device(identifiers={(DOMAIN, host)}):
-            dev_reg.async_update_device(device.id, new_identifiers={(DOMAIN, device_id)})
+        for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+            if (DOMAIN, host) in device.identifiers:
+                dev_reg.async_update_device(device.id, new_identifiers={(DOMAIN, device_id)})
         hass.config_entries.async_update_entry(
             entry,
             data={**entry.data, CONF_DEVICE_ID: device_id},

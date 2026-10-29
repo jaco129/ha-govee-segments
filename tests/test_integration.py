@@ -81,7 +81,8 @@ def no_quiet_window():
 async def test_setup_creates_device_and_lights(hass, fake_listener):
     entry = await setup(hass)
     assert entry.state is ConfigEntryState.LOADED
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, DEVICE_ID)})
+    [device] = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    assert device.identifiers == {(DOMAIN, DEVICE_ID)}
     assert device.sw_version == "1.06.24"
     assert device.hw_version == "1.04.01"
     # devStatus says the fixture is on, and with no saved state each light is assumed lit.
