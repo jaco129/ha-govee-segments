@@ -1,0 +1,12 @@
+{
+  "domain": "govee_segments",
+  "name": "Govee LAN Segments",
+  "codeowners": ["@jaco129"],
+  "config_flow": true,
+  "documentation": "https://github.com/jaco129/ha-govee-segments",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/jaco129/ha-govee-segments/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
