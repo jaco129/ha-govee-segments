@@ -89,6 +89,9 @@ async def test_setup_creates_device_and_lights(hass, fake_listener):
     assert hass.states.get(GROUP).state == STATE_ON
     for n in range(1, 5):
         assert hass.states.get(f"light.govee_h7094_light_{n}").state == STATE_ON
+    for entity_id in (GROUP, LIGHT_1):
+        # Not assumed: the UI shows a toggle instead of separate on/off buttons.
+        assert "assumed_state" not in hass.states.get(entity_id).attributes
     assert fake_listener.take() == []  # setting up must not change the lights
 
 

@@ -331,7 +331,9 @@ def _status_color(status: dict[str, Any]) -> tuple[tuple[int, int, int], int]:
 
 class _StoreLight(CoordinatorEntity[GoveeCoordinator], LightEntity):
     _attr_has_entity_name = True
-    _attr_assumed_state = True  # per-light state can't be read back over LAN
+    # Not assumed_state, so the UI shows a toggle rather than separate on/off
+    # buttons. Fixture power is polled; only a single light changed in the Govee
+    # app goes unnoticed (see SegmentStore.handle_status).
 
     def __init__(self, coordinator: GoveeCoordinator, store: SegmentStore, device: DeviceInfo) -> None:
         super().__init__(coordinator)
