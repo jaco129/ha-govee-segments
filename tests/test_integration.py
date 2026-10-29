@@ -15,7 +15,10 @@ from custom_components.govee_segments.const import CONF_SKU, DOMAIN
 from custom_components.govee_segments.protocol import brightness_frame, color_frame, off_frame
 
 HOST = "192.0.2.10"
+GROUP = "light.govee_h7094"
+LIGHT_1 = "light.govee_h7094_light_1"
 LIGHT_2 = "light.govee_h7094_light_2"
+ALL = [0, 1, 2, 3]
 
 
 @pytest.fixture
@@ -119,3 +122,66 @@ async def test_unload(hass, sent):
     with patch("custom_components.govee_segments.GoveeSender.close") as close:
         assert await hass.config_entries.async_unload(entry.entry_id)
     close.assert_called_once()
+
+
+async def call(hass, service, entity_id, **data):
+    await hass.services.async_call(LIGHT_DOMAIN, service, {ATTR_ENTITY_ID: entity_id, **data}, blocking=True)
+
+
+async def test_group_lists_members(hass, sent):
+    await setup_entry(hass)
+    state = hass.states.get(GROUP)
+    assert state.state == STATE_OFF
+    assert state.attributes[ATTR_ENTITY_ID] == [f"light.govee_h7094_light_{n}" for n in range(1, 5)]
+
+
+async def test_group_off_is_one_frame(hass, sent):
+    await setup_entry(hass)
+    await call(hass, "turn_on", GROUP)
+    await call(hass, "turn_off", GROUP)
+    assert sent[-1] == [off_frame(ALL)]
+    for n in range(1, 5):
+        assert hass.states.get(f"light.govee_h7094_light_{n}").state == STATE_OFF
+
+
+async def test_group_colour_applies_to_all(hass, sent):
+    await setup_entry(hass)
+    await call(hass, "turn_on", GROUP, **{ATTR_RGB_COLOR: (0, 255, 0), ATTR_BRIGHTNESS: 255})
+    assert sent == [[color_frame(ALL, (0, 255, 0)), brightness_frame(ALL, 100)]]
+    for n in range(1, 5):
+        state = hass.states.get(f"light.govee_h7094_light_{n}")
+        assert state.state == STATE_ON
+        assert state.attributes[ATTR_RGB_COLOR] == (0, 255, 0)
+
+
+async def test_group_on_restores_each_lights_own_colour(hass, sent):
+    await setup_entry(hass)
+    await call(hass, "turn_on", LIGHT_1, **{ATTR_RGB_COLOR: (255, 0, 0)})
+    await call(hass, "turn_on", LIGHT_2, **{ATTR_RGB_COLOR: (0, 0, 255), ATTR_BRIGHTNESS: 128})
+    await call(hass, "turn_off", GROUP)
+    await call(hass, "turn_on", GROUP)
+    # Lights 3 and 4 share the default white and 100%, so they share frames.
+    assert sent[-1] == [
+        color_frame([0], (255, 0, 0)),
+        color_frame([1], (0, 0, 255)),
+        color_frame([2, 3], (255, 255, 255)),
+        brightness_frame([0, 2, 3], 100),
+        brightness_frame([1], 50),
+    ]
+    assert hass.states.get(LIGHT_2).attributes[ATTR_RGB_COLOR] == (0, 0, 255)
+
+
+async def test_group_follows_members(hass, sent):
+    await setup_entry(hass)
+    await call(hass, "turn_on", LIGHT_2, **{ATTR_RGB_COLOR: (255, 0, 0), ATTR_BRIGHTNESS: 100})
+    state = hass.states.get(GROUP)
+    assert state.state == STATE_ON  # any member on
+    assert state.attributes[ATTR_RGB_COLOR] == (255, 0, 0)  # only lit members count
+    assert state.attributes[ATTR_BRIGHTNESS] == 100
+    await call(hass, "turn_on", LIGHT_1, **{ATTR_RGB_COLOR: (0, 0, 255), ATTR_BRIGHTNESS: 200})
+    state = hass.states.get(GROUP)
+    assert state.attributes[ATTR_RGB_COLOR] == (128, 0, 128)
+    assert state.attributes[ATTR_BRIGHTNESS] == 150
+    await call(hass, "turn_off", LIGHT_1)
+    await call(hass, "turn_off", LIGHT_2)
+    assert hass.states.get(GROUP).state == STATE_OFF
