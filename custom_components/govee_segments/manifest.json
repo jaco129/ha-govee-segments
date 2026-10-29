@@ -13,5 +13,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/jaco129/ha-govee-segments/issues",
   "requirements": [],
-  "version": "0.2.0"
+  "version": "0.2.0b1"
 }
